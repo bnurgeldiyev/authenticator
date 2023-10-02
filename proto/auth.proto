@@ -1,0 +1,32 @@
+syntax = "proto3";
+option go_package = "../auth";
+
+message AuthRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message CreateRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message CreateResponse {}
+
+message ChangeStateRequest {
+  string username = 1;
+  string state = 2;
+}
+
+message ChangeStateResponse {}
+
+service AuthService {
+  rpc Auth(AuthRequest) returns(AuthResponse) {}
+  rpc Create(CreateRequest) returns(CreateResponse) {}
+  rpc ChangeState(ChangeStateRequest) returns(ChangeStateResponse) {}
+}
