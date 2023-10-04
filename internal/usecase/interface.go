@@ -13,6 +13,8 @@ type (
 	User interface {
 		Auth(ctx context.Context, in *dto.AuthRequest) (*dto.AuthResponse, error)
 		Create(ctx context.Context, in *dto.Create) error
+		ChangeState(ctx context.Context, in *dto.ChangeState) error
+		Validate(ctx context.Context, token string) error
 	}
 )
 

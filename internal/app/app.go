@@ -2,24 +2,19 @@ package app
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
-	"authenticator/auth"
 	"authenticator/config"
+	"authenticator/internal/controller"
 	"authenticator/internal/usecase"
-	"authenticator/pkg/httpserver"
 	"authenticator/pkg/postgres"
 )
-
-type srv struct {
-	auth.AuthServiceServer
-}
 
 func Run(cfg *config.Config) {
 
@@ -37,30 +32,49 @@ func Run(cfg *config.Config) {
 
 	useCases := usecase.LoadUseCases(pg)
 
-	fmt.Println(useCases)
-
+	userRouter := controller.NewUserRouter(useCases.UserUseCase)
 	s := grpc.NewServer()
-	auth.RegisterAuthServiceServer(s, &srv{})
+	controller.RegisterAuthServiceServer(s, userRouter)
 
-	handler := mux.NewRouter()
-	httpServer := httpserver.New(handler, httpserver.Port(cfg.Http.Host, cfg.Http.Port))
+	lis, err := net.Listen("tcp", ":"+cfg.Http.Port)
+	if err != nil {
+		log.Fatal().Err(err).Msg("App - net.Listen")
+		return
+	}
 
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	go setupSerer(s, lis)
+
+	signalChan := make(chan os.Signal, 1)
+	quitChan := make(chan interface{})
+	signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	fmt.Println("<--START-SERVER-->", cfg.Http)
-	select {
-	case s := <-interrupt:
-		err = httpServer.Shutdown()
-		if err != nil {
-			log.Err(err).Msg("app - Run - httpServer.Shutdown")
-			return
-		}
+	for {
+		select {
+		case <-quitChan:
+			log.Warn().Msg("quit channel closed, closing listener")
+			s.Stop()
 
-		log.Info().Msg("app - Run - signal: " + s.String())
-		return
-	case err = <-httpServer.Notify():
-		log.Err(err).Msg("app - Run - httpServer.Notify")
+			err = lis.Close()
+			if err != nil {
+				log.Err(err).Msg("App - lis.Close()")
+			}
+			return
+		case sig := <-signalChan:
+			switch sig {
+			case os.Interrupt, os.Kill, syscall.SIGTERM:
+				log.Info().Msg("interrupt signal received, sending Quit signal")
+				close(quitChan)
+			default:
+				log.Info().Msg("signal received")
+			}
+		}
+	}
+}
+
+func setupSerer(srv *grpc.Server, lis net.Listener) {
+	if err := srv.Serve(lis); err != nil {
+		log.Fatal().Msg("App - setupServer - srv.Serve(list)")
 		return
 	}
 }

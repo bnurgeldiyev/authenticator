@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "../auth";
+option go_package = "/controller";
 
 message AuthRequest {
   string username = 1;
@@ -25,8 +25,21 @@ message ChangeStateRequest {
 
 message ChangeStateResponse {}
 
+message ValidateTokenRequest {
+  string AccessToken = 1;
+}
+
+message ValidateTokenResponse {}
+
+message DeleteRequest {
+  string username = 1;
+}
+
+message DeleteResponse {}
+
 service AuthService {
   rpc Auth(AuthRequest) returns(AuthResponse) {}
   rpc Create(CreateRequest) returns(CreateResponse) {}
-  rpc ChangeState(ChangeStateRequest) returns(ChangeStateResponse) {}
+  rpc Delete(DeleteRequest) returns(DeleteResponse) {}
+  rpc ValidateToken(ValidateTokenRequest) returns(ValidateTokenResponse) {}
 }
