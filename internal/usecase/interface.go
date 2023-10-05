@@ -15,6 +15,7 @@ type (
 		Create(ctx context.Context, in *dto.Create) error
 		ChangeState(ctx context.Context, in *dto.ChangeState) error
 		Validate(ctx context.Context, token string) error
+		UpdateToken(ctx context.Context, in *dto.UpdateToken) (*dto.UpdateToken, error)
 	}
 )
 
@@ -30,5 +31,12 @@ type (
 		GetByUsername(ctx context.Context, username string) (*model.User, error)
 		GetPasswordById(ctx context.Context, id uuid.UUID) (*model.User, error)
 		ChangeState(ctx context.Context, old, new *model.User, txId int) error
+	}
+)
+
+type (
+	WebAPI interface {
+		AddRefreshToken(ctx context.Context, id uuid.UUID, refreshToken string) (err error)
+		GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (refreshToken uuid.UUID, err error)
 	}
 )

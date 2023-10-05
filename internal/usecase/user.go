@@ -17,13 +17,15 @@ import (
 type UserUseCase struct {
 	repo   UserRepo
 	txRepo TxRepo
+	webAPI WebAPI
 }
 
 // NewUserUseCase -.
-func NewUserUseCase(r UserRepo, tx TxRepo) *UserUseCase {
+func NewUserUseCase(r UserRepo, tx TxRepo, w WebAPI) *UserUseCase {
 	return &UserUseCase{
 		repo:   r,
 		txRepo: tx,
+		webAPI: w,
 	}
 }
 
@@ -68,6 +70,12 @@ func (uc *UserUseCase) Auth(ctx context.Context, in *dto.AuthRequest) (*dto.Auth
 	refreshToken, err := dto.GenerateRefreshToken()
 	if err != nil {
 		zLog.Err(err).Msg("UserUseCase - error processing dto.GenerateRefreshToken()")
+		return nil, err
+	}
+
+	err = uc.webAPI.AddRefreshToken(ctx, user.Id, refreshToken.String())
+	if err != nil {
+		zLog.Err(err).Msg("UserUseCase - error uc.webAPI.AddRefreshToken")
 		return nil, err
 	}
 
@@ -196,4 +204,63 @@ func (uc *UserUseCase) Validate(ctx context.Context, token string) error {
 	}
 
 	return nil
+}
+
+func (uc *UserUseCase) UpdateToken(ctx context.Context, in *dto.UpdateToken) (*dto.UpdateToken, error) {
+
+	zLog := zerolog.Ctx(ctx).With().
+		Str("unit", "internal.usecase.UserUseCase").
+		Str("method", "UpdateToken").Logger()
+
+	userId, err := dto.VerifyAccessToken(in.AccessToken)
+	if err != nil && err.Error() != "Token is expired" {
+		if err.Error() != "Token is expired" {
+			zLog.Err(err).Msg("UserUseCase - error dto.VerifyAccessToken")
+			return nil, model.ErrUnauthorized
+		}
+	}
+
+	if err == nil {
+		zLog.Info().Msg("UserUseCase - info - accessToken is not expired")
+		return nil, model.ErrForbidden
+	}
+
+	userById, err1 := uc.repo.GetById(ctx, userId)
+	if err1 != nil {
+		zLog.Err(err).Msg("UserUseCase - error uc.repo.GetById")
+		return nil, err
+	}
+
+	if userById == nil {
+		eMsg := fmt.Sprintf("User with id = <%s> not found", userId)
+		zLog.Err(nil).Msg(eMsg)
+		return nil, err
+	}
+
+	accessToken, err := dto.GenerateAccessToken(userId)
+	if err != nil {
+		zLog.Err(err).Msg("UserUseCase - error processing dto.GenerateAccessToken()")
+		return nil, err
+	}
+
+	refreshToken, err := dto.GenerateRefreshToken()
+	if err != nil {
+		zLog.Err(err).Msg("UserUseCase - error processing dto.GenerateRefreshToken()")
+		return nil, err
+	}
+
+	err = uc.webAPI.AddRefreshToken(ctx, userId, refreshToken.String())
+	if err != nil {
+		zLog.Err(err).Msg("UserUseCase - error uc.webAPI.AddRefreshToken")
+		return nil, err
+	}
+
+	item := &dto.UpdateToken{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken.String(),
+	}
+
+	fmt.Println(item)
+
+	return item, nil
 }

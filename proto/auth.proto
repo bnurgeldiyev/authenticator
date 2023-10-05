@@ -26,7 +26,7 @@ message ChangeStateRequest {
 message ChangeStateResponse {}
 
 message ValidateTokenRequest {
-  string AccessToken = 1;
+  string access_token = 1;
 }
 
 message ValidateTokenResponse {}
@@ -37,9 +37,20 @@ message DeleteRequest {
 
 message DeleteResponse {}
 
+message UpdateTokenRequest {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message UpdateTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
 service AuthService {
   rpc Auth(AuthRequest) returns(AuthResponse) {}
   rpc Create(CreateRequest) returns(CreateResponse) {}
   rpc Delete(DeleteRequest) returns(DeleteResponse) {}
   rpc ValidateToken(ValidateTokenRequest) returns(ValidateTokenResponse) {}
+  rpc UpdateToken(UpdateTokenRequest) returns(UpdateTokenResponse) {}
 }

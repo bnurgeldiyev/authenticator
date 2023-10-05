@@ -40,6 +40,11 @@ type ChangeState struct {
 	State    model.State
 }
 
+type UpdateToken struct {
+	AccessToken  string
+	RefreshToken string
+}
+
 type AuthTokenClaim struct {
 	ID uuid.UUID
 	jwt.StandardClaims
@@ -54,6 +59,8 @@ func NewGrpcError(err error) error {
 		return status.Errorf(codes.NotFound, "Not found")
 	case errors.Is(err, model.ErrConflict):
 		return status.Errorf(codes.AlreadyExists, "Conflict")
+	case errors.Is(err, model.ErrForbidden):
+		return status.Errorf(codes.Canceled, "Canceled")
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -13,16 +14,17 @@ import (
 	"authenticator/config"
 	"authenticator/internal/controller"
 	"authenticator/internal/usecase"
+	"authenticator/pkg/cache"
 	"authenticator/pkg/postgres"
 )
 
 func Run(cfg *config.Config) {
 
-	//ctx := context.Background()
-	//c, err := cache.NewRedisService(ctx, cfg.Redis.URL, 1, 8, 256)
-	//if err != nil {
-	//	log.Panic("app - Run - cache.NewRedisService: %w", err)
-	//}
+	ctx := context.Background()
+	c, err := cache.NewRedisService(ctx, cfg.Redis.URL, 1, 8, 256)
+	if err != nil {
+		log.Fatal().Err(err).Msg("app - Run - cache.NewRedisService")
+	}
 
 	pg, err := postgres.NewService(cfg)
 	if err != nil {
@@ -30,7 +32,7 @@ func Run(cfg *config.Config) {
 		return
 	}
 
-	useCases := usecase.LoadUseCases(pg)
+	useCases := usecase.LoadUseCases(pg, c)
 
 	userRouter := controller.NewUserRouter(useCases.UserUseCase)
 	s := grpc.NewServer()

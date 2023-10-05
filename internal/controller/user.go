@@ -3,10 +3,11 @@ package controller
 import (
 	"context"
 
+	"github.com/rs/zerolog"
+
 	"authenticator/internal/dto"
 	"authenticator/internal/model"
 	"authenticator/internal/usecase"
-	"github.com/rs/zerolog"
 )
 
 type UserRouter struct {
@@ -97,4 +98,29 @@ func (r *UserRouter) ValidateToken(ctx context.Context, in *ValidateTokenRequest
 	}
 
 	return &ValidateTokenResponse{}, nil
+}
+
+func (r *UserRouter) UpdateToken(ctx context.Context, in *UpdateTokenRequest) (*UpdateTokenResponse, error) {
+
+	zLog := zerolog.Ctx(ctx).With().
+		Str("unit", "internal.controller.User").
+		Str("method", "UpdateToken").Logger()
+
+	tokenRequest := &dto.UpdateToken{
+		AccessToken:  in.AccessToken,
+		RefreshToken: in.RefreshToken,
+	}
+
+	data, err := r.u.UpdateToken(ctx, tokenRequest)
+	if err != nil {
+		zLog.Err(err).Msg("Error - Controller - User - ValidateToken")
+		return nil, dto.NewGrpcError(err)
+	}
+
+	res := &UpdateTokenResponse{
+		AccessToken:  data.AccessToken,
+		RefreshToken: data.RefreshToken,
+	}
+
+	return res, nil
 }

@@ -52,15 +52,14 @@ func VerifyAccessToken(token string) (id uuid.UUID, err error) {
 		return []byte(config.Conf.Jwt.Secret), nil
 	})
 
+	idStr := fmt.Sprintf("%v", claims["ID"])
+	id = uuid.MustParse(idStr)
+
 	if err != nil {
 		eMsg := "An error occurred on jwt.parse"
 		zLog.Err(err).Msg(eMsg)
-		return uuid.Nil, err
+		return id, err
 	}
-
-	idStr := fmt.Sprintf("%v", claims["ID"])
-
-	id = uuid.MustParse(idStr)
 
 	return
 }
