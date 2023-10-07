@@ -1,0 +1,56 @@
+syntax = "proto3";
+option go_package = "/controller";
+
+message AuthRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message CreateRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message CreateResponse {}
+
+message ChangeStateRequest {
+  string username = 1;
+  string state = 2;
+}
+
+message ChangeStateResponse {}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {}
+
+message DeleteRequest {
+  string username = 1;
+}
+
+message DeleteResponse {}
+
+message UpdateTokenRequest {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message UpdateTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+service AuthService {
+  rpc Auth(AuthRequest) returns(AuthResponse) {}
+  rpc Create(CreateRequest) returns(CreateResponse) {}
+  rpc Delete(DeleteRequest) returns(DeleteResponse) {}
+  rpc ValidateToken(ValidateTokenRequest) returns(ValidateTokenResponse) {}
+  rpc UpdateToken(UpdateTokenRequest) returns(UpdateTokenResponse) {}
+}
