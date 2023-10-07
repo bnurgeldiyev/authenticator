@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  database:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DATABASE=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+
+  cache:
+    image: redis
+    restart: always
+    command: redis-server --appendonly yes
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - database
+      - cache
+    restart: always
+    environment:
+      - HTTP_HOST=0.0.0.0
+      - HTTP_PORT=${HTTP_PORT}
+
+      - DB_HOST=database
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_NAME}
+      - DB_POOL_MAX=${DB_POOL_MAX}
+      - DB_URL=postgres://${DB_USER}:${DB_PASSWORD}@database:${DB_PORT}/${DB_NAME}
+
+      - ACCESS_TOKEN_EXPIRY=${ACCESS_TOKEN_EXPIRY}
+      - REFRESH_TOKEN_EXPIRY=${REFRESH_TOKEN_EXPIRY}
+      - TOKEN_SECRET=${TOKEN_SECRET}
+
+      - REDIS_HOST=cache
+      - REDIS_PORT=6379
+      - REDIS_CONN=cache:6379

@@ -65,7 +65,10 @@ func NewService(cfg *config.Config) (db *Postgres, err error) {
 	if err != nil {
 		return nil, err
 	}
-	conn.Close(ctx)
+	err = conn.Close(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	var poolCfg *pgxpool.Config
 	poolCfg, err = pgxpool.ParseConfig(cfg.Database.URL)
